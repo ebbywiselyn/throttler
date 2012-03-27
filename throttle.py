@@ -143,8 +143,8 @@ def _GenerateConfig(options, init_time, name='Object'):
     A Data Object with required arguments
   """
    
-  precision = 0.1
   valve_intvl = 10
+  precision = 1.0 / value_intvl
   dur = precision / valve_intvl
   rate = options.byte
 
