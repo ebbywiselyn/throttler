@@ -40,7 +40,7 @@ class Throttle(object):
   """
 
 
-  def __init__(self, config):
+  def __init__(self, options, init_time):
     """Creates a Throttle Object and provides data rate throttling .
     Args:
       config: [Conf] The configuration of the Throttle specified by the 
@@ -51,50 +51,57 @@ class Throttle(object):
       A Throttle Object with the specified configuration 
     """
 
-    self.conf = config
-    self.valve_intvl = 10
     self.data = ''
+    self.valve_intvl = 10
+    self.precision = 1.0 / self.valve_intvl
+    self.dur = self.precision / self.valve_intvl
+    self.rate = options.byte
+
+    self.block_size = (math.ceil(self.rate * self.precision)) 
+    self.frag_size = (math.ceil(self.block_size / self.valve_intvl))
+    self.end_of_input = False
 
     self.unit_timer = 0
     self.deci_timer = 0
     self.centi_timer = 1
+    self.init_time = init_time
+    
 
   def _UnitOutlet(self):
     """Streams data in frag_size in the interval specified by centi_timer"""
-    conf = self.conf
     centi_dur = 0.01
 
     while self.centi_timer <= self.valve_intvl:  
       start = time.time()
 
-      if conf.block_size > conf.frag_size:
-        self.data = sys.stdin.read(int(conf.frag_size))
+      if self.block_size > self.frag_size:
+        self.data = sys.stdin.read(int(self.frag_size))
         if not self.data:
-          conf.end_of_input = True
+          self.end_of_input = True
           return
         sys.stdout.write(self.data)
-        conf.block_size = conf.block_size - conf.frag_size
+        self.block_size = self.block_size - self.frag_size
       else:
-        self.data = sys.stdin.read(int(conf.block_size))
+        self.data = sys.stdin.read(int(self.block_size))
         if not self.data:
-          conf.end_of_input = True
+          self.end_of_input = True
           return
         sys.stdout.write(self.data)
       
       end = time.time()
       dur = end - start
-      prec = conf.precision / 10
+      prec = self.precision / 10
       real_time = (self.unit_timer * 100 + 
                    self.deci_time * 10 + 
                    self.centi_timer) * prec
       self.centi_timer += 1
-      exec_time = time.time() - conf.init_time 
+      exec_time = time.time() - self.init_time 
      
       if dur < centi_dur and real_time > exec_time:
         time.sleep(real_time - exec_time)
 
     self.centi_timer = 1
-    conf.block_size = math.ceil(conf.rate * conf.precision)
+    self.block_size = math.ceil(self.rate * self.precision)
 
   
   def Throttling(self):
@@ -105,9 +112,7 @@ class Throttle(object):
     Yields:
       Data stream at specified rate
     """
-    conf = self.conf 
     input_streaming = True
-    self.unit_timer = 0
 
     while input_streaming:
       try:
@@ -122,7 +127,7 @@ class Throttle(object):
      
       [self._UnitOutlet() for self.deci_time in 
           range(0, self.valve_intvl) 
-              if not conf.end_of_input]
+              if not self.end_of_input]
  
       if not self.data:
         input_streaming = False
@@ -204,8 +209,8 @@ def main():
     sys.exit(2)
 
   options = _UnitsConvert (options)
-  Conf = _GenerateConfig(options, init_time, name='Config')
-  throttle = Throttle(Conf())
+  #Conf = _GenerateConfig(options, init_time, name='Config')
+  throttle = Throttle(options, init_time)
   throttle.Throttling()
 
 if __name__ == '__main__':
