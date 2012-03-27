@@ -34,9 +34,9 @@ class Throttle(object):
       valve interval specifies the outlet interval, which defaults to 10
       Timing is done using 3 timers with varying levels of precision,
 
-      unit_duration = 1 sec
-      deci_duration = 0.1 sec
-      centi_duration = 0.01 sec
+      unit_timer = 1 sec
+      deci_timer = 0.1 sec
+      centi_timer = 0.01 sec
   """
 
 
@@ -61,6 +61,8 @@ class Throttle(object):
     self.frag_size = (math.ceil(self.block_size / self.valve_intvl))
     self.end_of_input = False
 
+    self.unit_timer = 0
+    self.deci_timer = 0
     self.centi_timer = 1
     self.init_time = init_time
     
@@ -89,7 +91,9 @@ class Throttle(object):
       end = time.time()
       dur = end - start
       prec = self.precision / 10
-      real_time = self.centi_timer * prec
+      real_time = (self.unit_timer * 100 + 
+                   self.deci_time * 10 + 
+                   self.centi_timer) * prec
       self.centi_timer += 1
       exec_time = time.time() - self.init_time 
      
