@@ -135,36 +135,6 @@ class Throttle(object):
       self.unit_timer = self.unit_timer + 1
 
 
-def _GenerateConfig(options, init_time, name='Object'):
-  """Dynamically generates a Config Object.
-  Based on the options provided
-  Args:
-    options: [instance] List of options from the user
-    init_time: [float] Start time of the application 
-    name: [string] Name of the Config object to be generated 
-          defaults to 'Object'
-
-  Yields:
-    A Data Object with required arguments
-  """
-   
-  valve_intvl = 10
-  precision = 1.0 / value_intvl
-  dur = precision / valve_intvl
-  rate = options.byte
-
-  block_size = (math.ceil(rate * precision)) 
-  frag_size = (math.ceil(block_size / valve_intvl))
-  end_of_input = False
-  
-  
-  c = dict([('rate', options.byte), ('precision', precision), 
-            ('dur', dur), ('block_size', block_size), 
-            ('frag_size', frag_size), ('end_of_input', end_of_input), ('init_time', init_time)])
-  
-  return type(name, (), c)    
-
-
 def _UnitsConvert(options):
   """Convert between units.
   Args:
@@ -209,7 +179,6 @@ def main():
     sys.exit(2)
 
   options = _UnitsConvert (options)
-  #Conf = _GenerateConfig(options, init_time, name='Config')
   throttle = Throttle(options, init_time)
   throttle.Throttling()
 
