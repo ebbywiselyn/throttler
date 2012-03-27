@@ -147,10 +147,6 @@ def _GenerateConfig(options, init_time, name='Object'):
   valve_intvl = 10
   dur = precision / valve_intvl
   rate = options.byte
-  diameter = options.diameter * 1024
-
-  if rate > diameter:
-    rate = diameter
 
   block_size = (math.ceil(rate * precision)) 
   frag_size = (math.ceil(block_size / valve_intvl))
@@ -159,8 +155,7 @@ def _GenerateConfig(options, init_time, name='Object'):
   
   c = dict([('rate', options.byte), ('precision', precision), 
             ('dur', dur), ('block_size', block_size), 
-            ('frag_size', frag_size), ('diameter', diameter),
-            ('end_of_input', end_of_input), ('init_time', init_time)])
+            ('frag_size', frag_size), ('end_of_input', end_of_input), ('init_time', init_time)])
   
   return type(name, (), c)    
 
@@ -202,9 +197,6 @@ def main():
                    dest="kibi_bit", help="kibibits per second")
   group.add_option("-K", "--kibibyte", action="store", type="int", 
                    dest="kibi_byte", help="kilobytes per second")
-  group.add_option("-d", "--max-d", action="store", type="int", 
-                   default=400, dest="diameter", 
-                   help="maximum rate of throttle, default 400 KB/sec")
   try:
     options, args = parser.parse_args(sys.argv[1:])
   except optparse.OptionError, TypeError:
