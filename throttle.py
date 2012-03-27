@@ -31,7 +31,7 @@ import time
 class Throttle(object):
   """ Throttle provides data rate throttling
 
-      valve interval specifies the outlet interval, which defaults to 10
+      outlet interval specifies the outlet interval, which defaults to 10
       Timing is done using 3 timers with varying levels of precision,
 
       unit_timer = 1 sec
@@ -45,20 +45,22 @@ class Throttle(object):
     Args:
       config: [Conf] The configuration of the Throttle specified by the 
               Config Object. Config should have data rate, precision of the timer 
-              duration of the throttle valve events, data fragment and block sizes. 
+              duration of the throttle outlet events, data fragment and block sizes. 
  
     Yields:
       A Throttle Object with the specified configuration 
     """
 
     self.data = ''
-    self.valve_intvl = 10
-    self.precision = 1.0 / self.valve_intvl
-    self.dur = self.precision / self.valve_intvl
+
+    #Every outlet_intvl seconds output the frag_size data
+    self.block_precision = 0.1
+    self.frag_precision = 0.01
+    self.outlet_intvl = 10
     self.rate = options.byte
 
-    self.block_size = (math.ceil(self.rate * self.precision)) 
-    self.frag_size = (math.ceil(self.block_size / self.valve_intvl))
+    self.block_size = (math.ceil(self.rate * self.block_precision)) 
+    self.frag_size = (math.ceil(self.block_size / 10))
     self.end_of_input = False
 
     self.unit_timer = 0
@@ -71,7 +73,7 @@ class Throttle(object):
     """Streams data in frag_size in the interval specified by centi_timer"""
     centi_dur = 0.01
 
-    while self.centi_timer <= self.valve_intvl:  
+    while self.centi_timer <= self.outlet_intvl:  
       start = time.time()
 
       if self.block_size > self.frag_size:
@@ -90,10 +92,9 @@ class Throttle(object):
       
       end = time.time()
       dur = end - start
-      prec = self.precision / 10
       real_time = (self.unit_timer * 100 + 
                    self.deci_time * 10 + 
-                   self.centi_timer) * prec
+                   self.centi_timer) * self.frag_precision
       self.centi_timer += 1
       exec_time = time.time() - self.init_time 
      
@@ -101,7 +102,7 @@ class Throttle(object):
         time.sleep(real_time - exec_time)
 
     self.centi_timer = 1
-    self.block_size = math.ceil(self.rate * self.precision)
+    self.block_size = math.ceil(self.rate * self.block_precision)
 
   
   def Throttling(self):
@@ -126,7 +127,7 @@ class Throttle(object):
         continue
      
       [self._UnitOutlet() for self.deci_time in 
-          range(0, self.valve_intvl) 
+          range(0, self.outlet_intvl) 
               if not self.end_of_input]
  
       if not self.data:
